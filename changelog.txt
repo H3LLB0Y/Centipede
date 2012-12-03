@@ -1,0 +1,31 @@
+Changelog for Centipede!
+
+//------------------------------------------------------------//
+Version:	0.0.1
+Author:		H3LLB0Y
+Date:		03/12/2012
+
+camerahandler.py
+-	Modified to suit Centipede game (stolen from Warlocks :P)
+
+centipede.py
+-	Added spawn positions, they spawn in a circle around the
+	center, based on the number of players.
+-	Split the update function into rotation and movement
+-	Fixed the movement to use headsUp function now, much
+	smoother.
+
+game.py
+-	Setup GameData (at the moment just seed and max foods)
+-	Made GameHandler a DirectObject so it can accept the
+	controls, rather than accepting using the 'showbase'
+-	Setup Game to initialize the seed (sent from server)
+-	Made Game also a DirectObject to handle the collision
+	events (need to add ignore on destroy)
+-	Collision Handler is setup for centipede heads to foods
+-	Still need to setup centipede heads to other centipedes
+	and also with the surrounding of the world
+
+user.py
+-	Changed to centipede instead of warlock
+//------------------------------------------------------------//

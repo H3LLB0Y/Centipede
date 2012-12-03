@@ -50,6 +50,10 @@ class Main(ShowBase):
 	def start_round(self):
 		self.preround.hide()
 		self.round = Round(self)
+	
+	def end_round(self):
+		self.round.hide()
+		self.pregame.show()
 		
 	def host_game(self, params):
 		pid = Popen(["python", "server.py", params]).pid

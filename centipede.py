@@ -64,6 +64,7 @@ class Centipede():
 		# Set rotation of centipede head
 		self.head.setH(self.h)
 		
+		self.tail.setH(self.h)
 		# Set tail position
 		self.tail.setPos(self.head, 0, -self.length, 0)
 		

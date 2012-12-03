@@ -206,3 +206,7 @@ class Pregame():
 	def hide(self):
 		self.bg.Hide()
 		self.doc.Hide()
+	
+	def show(self):
+		self.bg.Show()
+		self.doc.Show()

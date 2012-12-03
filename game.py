@@ -33,7 +33,7 @@ class GameHandler(DirectObject.DirectObject):
 		self.game = game
 		
 		# Keys array (down if 1, up if 0)
-		self.keys = { "left": 0, "right": 0, "up": 0, "down": 0, "c": 0, "x": 0 }
+		self.keys = { "left": 0, "right": 0, "up": 0, "down": 0, "c": 0 }
 		
 		# holding c will focus the camera on clients warlock
 		self.accept("c", set_value, [self.keys, "c", 1])
@@ -107,6 +107,8 @@ class Game(DirectObject.DirectObject):
 		# run each of the centipedes simulations
 		for user in self.usersData:
 			user.centipede.update(dt)
+			if len(user.centipede.body) > 10:
+				return False
 		
 		for food in self.foods:
 			food.update(dt)
@@ -119,7 +121,6 @@ class Game(DirectObject.DirectObject):
 		return True
 
 	def collideInto(self, collEntry):
-		print collEntry.getFromNodePath(), collEntry.getIntoNodePath()
 		for user in self.usersData:
 			if collEntry.getFromNodePath() == user.centipede.head.collisionNode[0]:
 				for food in self.foods:

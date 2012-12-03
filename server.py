@@ -310,7 +310,6 @@ class Server(ShowBase):
 		# process incoming packages
 		temp = self.getData()
 		for package in temp:
-			print package
 			if len(package) == 2:
 				# check to make sure connection has username
 				for user in self.users:
@@ -319,7 +318,7 @@ class Server(ShowBase):
 		# get frame delta time
 		dt = globalClock.getDt()
 		self.game_time += dt
-		# if time is less than 3 secs (countdown for determining pings of clients)
+		# if time is less than 3 secs (countdown for determining pings of clients?)
 		# tick out for clients
 		while self.game_time > game_tick:
 			# update all clients with new info before saying tick
@@ -333,6 +332,12 @@ class Server(ShowBase):
 			# run simulation
 			if not self.game.run_tick(game_tick):
 				print 'Game Over'
+				# send to all players that game is over (they know already but whatever)
+				# and send final game data/scores/etc
+				for user in self.users:
+					user.ready = False
+				taskMgr.doMethodLater(0.5, self.lobby_loop, 'Lobby Loop')
+				return task.done
 		return task.cont
 
 server = Server()

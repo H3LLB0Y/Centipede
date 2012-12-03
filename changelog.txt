@@ -5,6 +5,19 @@ Version:	0.0.1
 Author:		H3LLB0Y
 Date:		03/12/2012
 
+// Known Issues
+-	Server does not reset everything when it returns to lobby
+	after the game round ends
+-	Client needs to reset everything too (except connection
+	and users on server)
+-	No collision with surrounding of the world (needs to have
+	simplified collision geometry added to the model rather
+	than collisions with visible geometry)
+-	Need to add centipede-centipede collisions
+-	No real end game condition (last man standing? length of
+	centipede? time limit?)
+
+// File Changes
 camerahandler.py
 -	Modified to suit Centipede game (stolen from Warlocks :P)
 
@@ -14,6 +27,8 @@ centipede.py
 -	Split the update function into rotation and movement
 -	Fixed the movement to use headsUp function now, much
 	smoother.
+-	Fixed tail heading to be the same as the head (for all but
+	centipede number 0)
 
 game.py
 -	Setup GameData (at the moment just seed and max foods)
@@ -25,7 +40,24 @@ game.py
 -	Collision Handler is setup for centipede heads to foods
 -	Still need to setup centipede heads to other centipedes
 	and also with the surrounding of the world
+-	Added temporary game over condition (when a centipede gets
+	more than 10 body parts)
+-	Removed useless print or collisions
 
 user.py
 -	Changed to centipede instead of warlock
+
+main.py
+-	Added an end round function for when game round ends so
+	client returns to pre game lobby
+
+pregame.py
+-	Added a show function for when end round function is called
+	to show lobby again
+
+round.py
+-	Added hide function (just removes game loop from the taskMgr
+
+server.py
+-	Added return to lobby part when game ends
 //------------------------------------------------------------//

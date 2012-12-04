@@ -38,3 +38,8 @@ test.py
 *.blend3
 *.blend4
 *.blend5
+
+# Sublime project and workspace #
+#################################
+*.sublime-project
+*.sublime-workspace

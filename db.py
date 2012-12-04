@@ -13,7 +13,7 @@ class ClientDataBase:
 			self.connection.close()
 				
 	# Use the Clients_db function to save and load client account details.
-	def add_client(self, username, password):
+	def addClient(self, username, password):
 		# Set the Cursor for This connection.
 		cur = self.connection.cursor()
 
@@ -32,14 +32,14 @@ class ClientDataBase:
 								{ "username": username, "password": password })
 			print username, " Created!"
 			returns = True, 'success'
-			connection.commit()
+			self.connection.commit()
 		# Close the Cursor and Connection.
 		cur.close()
 
 		return returns
 
 	# Used for login checks.
-	def validate_client(self, username, password):
+	def validateClient(self, username, password):
 		# Cursor setup.
 		cur = self.connection.cursor()
 

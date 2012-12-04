@@ -1,7 +1,6 @@
 from direct.showbase import DirectObject 
 from pandac.PandaModules import *
-import math 
-from util import *
+import math
 
 # Last modified: 10/2/2009 
 # This class takes over control of the camera and sets up a Real Time Strategy game type camera control system. The user can move the camera three 
@@ -61,7 +60,7 @@ class CameraHandler(DirectObject.DirectObject):
 		self.maxZoomIn = 25
 		#These two variables set the max distance a person can zoom in or out
 		
-		self.orbit_rate = 75
+		self.orbitRate = 75
 		# This is the rate of speed that the camera will rotate when middle mouse is pressed and mouse moved
 		# recommended rate 50-100
 
@@ -78,8 +77,8 @@ class CameraHandler(DirectObject.DirectObject):
 		# sets up the camrea handler to understand when the right mouse button has been released, and ends the "drag" mode when 
 		# the release is detected.
 		
-		self.store_x = 0
-		self.store_y = 0
+		self.storeX = 0
+		self.storeY = 0
 		# for storing of the x and y for the orbit
 
 		# The next pair of lines use lambda, which creates an on-the-spot one-shot function. 
@@ -93,23 +92,33 @@ class CameraHandler(DirectObject.DirectObject):
 		# adjustCamDist function  with the argument 1.1 
 		
 		# Keys array (down if 1, up if 0)
-		self.keys = {"cam-left": 0, "cam-right": 0, "cam-up": 0, "cam-down": 0}
+		self.keys = { "cam-left": 0, "cam-right": 0, "cam-up": 0, "cam-down": 0 }
 		
 		# Using Arrow Keys
-		self.accept("arrow_left", set_value, [self.keys, "cam-left", 1])
-		self.accept("arrow_right", set_value, [self.keys, "cam-right", 1])
-		self.accept("arrow_up", set_value, [self.keys, "cam-up", 1])
-		self.accept("arrow_down", set_value, [self.keys, "cam-down", 1])
-		self.accept("arrow_left-up", set_value, [self.keys, "cam-left", 0])
-		self.accept("arrow_right-up", set_value, [self.keys, "cam-right", 0])
-		self.accept("arrow_up-up", set_value, [self.keys, "cam-up", 0])
-		self.accept("arrow_down-up", set_value, [self.keys, "cam-down", 0])
+		self.accept("arrow_left", self.setValue, [self.keys, "cam-left", 1])
+		self.accept("arrow_right", self.setValue, [self.keys, "cam-right", 1])
+		self.accept("arrow_up", self.setValue, [self.keys, "cam-up", 1])
+		self.accept("arrow_down", self.setValue, [self.keys, "cam-down", 1])
+		self.accept("arrow_left-up", self.setValue, [self.keys, "cam-left", 0])
+		self.accept("arrow_right-up", self.setValue, [self.keys, "cam-right", 0])
+		self.accept("arrow_up-up", self.setValue, [self.keys, "cam-up", 0])
+		self.accept("arrow_down-up", self.setValue, [self.keys, "cam-down", 0])
 		
-		self.key_pan_rate = 1.5
+		self.keyPanRate = 1.5
 		# pan rate for when user presses the arrow keys
 		
 		# set up plane for checking collision with for mouse-3d world
 		self.plane = Plane(Vec3(0, 0, 1), Point3(0, 0, 0))
+
+	def destroy(self):
+		self.ignoreAll()
+
+	def setValue(self, array, key, value):
+		array[key] = value
+
+	def clamp(val, minVal, maxVal):
+		val = min(max(val, minVal), maxVal)
+		return val
 
 	def zoomOut(self):
 		if self.camDist <= self.maxZoomOut:
@@ -159,7 +168,7 @@ class CameraHandler(DirectObject.DirectObject):
 		base.camera.lookAt(self.target.getX(), self.target.getY(), self.target.getZ()) 
 		# Points the camera at the target location.
 		
-	def get_target(self):
+	def getTarget(self):
 		return self.target
 		# returns the cur
 
@@ -194,8 +203,8 @@ class CameraHandler(DirectObject.DirectObject):
 			# We're going to use the mouse, so we have to make sure it's in the game window. If it's not and we try to use it, we'll get 
 			# a crash error.
 			mpos = base.mouseWatcherNode.getMouse()
-			self.store_x = mpos.getX()
-			self.store_y = mpos.getY()
+			self.storeX = mpos.getX()
+			self.storeY = mpos.getY()
 			# take current cursor values
 		
 		base.win.movePointer(0, base.win.getXSize() / 2, base.win.getYSize() / 2)
@@ -212,7 +221,7 @@ class CameraHandler(DirectObject.DirectObject):
 		self.orbiting = False 
 		# Sets the orbiting variable to false to designate orbiting mode as off. 
 		
-		base.win.movePointer(0, int((self.store_x + 1.0) / 2 * base.win.getXSize()), int(base.win.getYSize() - ((self.store_y + 1.0) / 2 * base.win.getYSize())))
+		base.win.movePointer(0, int((self.storeX + 1.0) / 2 * base.win.getXSize()), int(base.win.getYSize() - ((self.storeY + 1.0) / 2 * base.win.getYSize())))
 		# set to taken cursor values from startOrbit
 		if base.mouseWatcherNode.hasMouse():
 			# We're going to use the mouse, so we have to make sure it's in the game window. If it's not and we try to use it, we'll get 
@@ -254,7 +263,7 @@ class CameraHandler(DirectObject.DirectObject):
 				# Checks to see if the camera is in orbiting mode. Orbiting mode overrides panning, because it would be problematic if, while 
 				# orbiting the camera the mouse came close to the screen edge and started panning the camera at the same time. 
 
-				self.turnCameraAroundPoint((self.mx - mpos.getX()) * self.orbit_rate * dt, (self.my - mpos.getY()) * self.orbit_rate * dt)
+				self.turnCameraAroundPoint((self.mx - mpos.getX()) * self.orbitRate * dt, (self.my - mpos.getY()) * self.orbitRate * dt)
 
 			else: 
 				# If the camera isn't in orbiting mode, we check to see if the mouse is close enough to the edge of the screen to start panning 
@@ -287,7 +296,7 @@ class CameraHandler(DirectObject.DirectObject):
 				# If up or down keys are pressed
 				if self.keys["cam-up"] ^ self.keys["cam-down"]:
 					moveY = True
-					panRate1 = self.key_pan_rate
+					panRate1 = self.keyPanRate
 					# Update warlock position on z plane
 					if self.keys["cam-up"]:
 						angleradiansX1 = base.camera.getH() * (math.pi / 180.0) + math.pi
@@ -297,7 +306,7 @@ class CameraHandler(DirectObject.DirectObject):
 				# If left or right keys are pressed
 				if self.keys["cam-left"] ^ self.keys["cam-right"]:
 					moveX = True 
-					panRate2 = self.key_pan_rate
+					panRate2 = self.keyPanRate
 					# Update warlock position on x plane
 					if self.keys["cam-left"]:
 						angleradiansX2 = base.camera.getH() * (math.pi / 180.0) + math.pi * 0.5 
@@ -329,7 +338,7 @@ class CameraHandler(DirectObject.DirectObject):
 				# The old mouse positions are updated to the current mouse position as the final step. 
 	
 	# Finds 3d world point on the z = 0 plane for destination/target
-	def get_mouse_3d(self):
+	def getMouse3D(self):
 		# make sure process has the mouse to not cause error
 		if base.mouseWatcherNode.hasMouse():
 			# get screen coordinates of mouse

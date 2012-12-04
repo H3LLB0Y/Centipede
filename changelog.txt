@@ -1,10 +1,5 @@
 Changelog for Centipede!
 
-//------------------------------------------------------------//
-Version:	0.0.1
-Author:		H3LLB0Y
-Date:		03/12/2012
-
 // Known Issues
 -	Server does not reset everything when it returns to lobby
 	after the game round ends
@@ -17,7 +12,80 @@ Date:		03/12/2012
 -	No real end game condition (last man standing? length of
 	centipede? time limit?)
 
-// File Changes
+//------------------------------------------------------------//
+Version:	0.0.2
+Author:		H3LLB0Y
+Date:		03/12/2012
+
+Lots of files
+-	Refactored some parts to conform to coding style (need to
+	write document sometime...)
+-	Removed some rubbish files
+	
+centipede.py
+-	Added destroy function for resetting of game state between
+	rounds
+
+food.py
+-	Added destroy function
+
+game.py
+-	Got rid of util file and added the setValue function to here
+-	Added destroy function to call centipede/food/world destroys
+
+login_server_core.py
+-	Refactored into loginserver.py
+
+login_server_inst.py
+-	Refactored into loginserver.py
+
+loginserver.py
+-	Refactored login_server_core and login_server_inst into one
+	file
+
+main.py
+-	Changed game flow a little bit to allow for round end to
+	return to game lobby, and for disconnect to go back to
+	main menu
+-	Now initialization of MainMenu and Pregame are done after
+	login, and hide and show functions are used instead of
+	destroying and creating when needed
+
+mainmenu.py
+-	Added show method for when disconnect brings client back to
+	main menu
+
+pregame.py
+-	Removed dependency on librocket, now uses directGUI only
+-	Still need to implement showing chat log and players/ready
+-	Toggle Ready/Disconnect and message sending works
+
+preround.py
+-	Removed as not needed in centipede game
+
+round.py
+-	Added destroy method for when round ends
+
+server.py
+-	Fixed bug where updating clients would try to send data to
+	disconnected clients (now checks for connection)
+-	Refactored code a bit, now calls prepareGame function when
+	all clients are ready which prepares the game state and
+	broadcasts required data before starting game loop
+
+util.py
+-	Refactored and removed and put the functions into the
+	files required
+
+world.py
+-	Added destroy function
+//------------------------------------------------------------//
+
+//------------------------------------------------------------//
+Version:	0.0.1
+Author:		H3LLB0Y
+Date:		03/12/2012
+
 camerahandler.py
 -	Modified to suit Centipede game (stolen from Warlocks :P)
 

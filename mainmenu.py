@@ -9,11 +9,12 @@ class MainMenu():
 	def __init__(self, showbase):
 		self.showbase = showbase
 		
-		self.status = OnscreenText(text = "", pos = Vec3(0, -0.35, 0), scale = 0.05, fg = (1, 0, 0, 1), align=TextNode.ACenter, mayChange=True)
+		self.status = OnscreenText(text = "", pos = Vec3(0, -0.35, 0), scale = 0.05, fg = (1, 0, 0, 1), align = TextNode.ACenter, mayChange = True)
 		
-		self.background = OnscreenImage(
-			image  = 'media/gui/mainmenu/menu.png',
-			parent = render2d
+		self.background = DirectFrame(
+			frameSize = (-1, 1, -1, 1),
+			frameTexture  = 'media/gui/mainmenu/menu.png',
+			parent = render2d,
 		)
 
 		self.title = OnscreenText(
@@ -34,24 +35,24 @@ class MainMenu():
 		# Host
 		self.params = ['3', '8']
 		p = serverButtons + Vec3(-0.25, 0, 0)
-		self.hostButton = DirectButton(text = 'Host', pos = p,  scale = 0.048, relief = DGG.GROOVE, command = self.showbase.host_game, extraArgs = [self.params])
+		self.hostButton = DirectButton(text = 'Host', pos = p,  scale = 0.048, relief = DGG.GROOVE, command = self.showbase.hostGame, extraArgs = [self.params])
 		self.buttons.append(self.hostButton)
 		# Join
 		p = serverButtons + Vec3(0.0, 0.0, 0.0)
-		self.joinButton = DirectButton(text = 'Join', pos = p, scale = 0.048, relief = DGG.GROOVE, command = self.join_server)
+		self.joinButton = DirectButton(text = 'Join', pos = p, scale = 0.048, relief = DGG.GROOVE, command = self.joinServer)
 		self.buttons.append(self.joinButton)
 		# Refresh
 		if self.showbase.online:
 			p = serverButtons + Vec3(0.25, 0, 0)
-			self.refreshButton = DirectButton(text = "Refresh", pos = p, scale = 0.048, relief = DGG.GROOVE, command = self.refresh_start)
+			self.refreshButton = DirectButton(text = "Refresh", pos = p, scale = 0.048, relief = DGG.GROOVE, command = self.refreshStart)
 			self.buttons.append(self.refreshButton)
-			self.refresh_start()
+			self.refreshStart()
 			
 			chatFrameCenter = (0.0, 0.325)
 			chatFrameSize = (2.5, 1.2)
 			self.chat = DirectFrame(
 							frameColor = (0, 0, 0, 1),
-							frameSize = (chatFrameSize[0] / 2, - chatFrameSize[0] / 2,  chatFrameSize[1] / 2, - chatFrameSize[1] / 2),
+							frameSize = (chatFrameSize[0] / 2, -chatFrameSize[0] / 2,  chatFrameSize[1] / 2, -chatFrameSize[1] / 2),
 							pos = (chatFrameCenter[0], 0, chatFrameCenter[1])
 						)
 			
@@ -62,12 +63,12 @@ class MainMenu():
 			self.channels = DirectScrolledList(
 								parent = self.chat,
 								pos = (channelFrameCenter[0], 0, channelFrameCenter[1]),
-								frameSize = (- channelFrameSize[0] / 2, channelFrameSize[0] / 2, channelFrameSize[1] / 2, - channelFrameSize[1] / 2),
+								frameSize = (-channelFrameSize[0] / 2, channelFrameSize[0] / 2, channelFrameSize[1] / 2, -channelFrameSize[1] / 2),
 								frameColor = (1, 0, 0, 0.5),
 								numItemsVisible = numItemsVisible,
 								forceHeight = itemHeight,
 
-								#itemFrame_frameSize = (- channelFrameSize[0] / 2.1, channelFrameSize[0] / 2.1, itemHeight, - channelFrameSize[1] + itemHeight),
+								#itemFrame_frameSize = (-channelFrameSize[0] / 2.1, channelFrameSize[0] / 2.1, itemHeight, -channelFrameSize[1] + itemHeight),
 								itemFrame_pos = (0, 0, channelFrameSize[1] / 2 - itemHeight),
 
 								decButton_pos = (-0.2, 0, channelFrameCenter[1] - channelFrameSize[1] / 2 + itemHeight / 4),
@@ -132,17 +133,18 @@ class MainMenu():
 							pos         = (0, -0.6, -1.5),
 							text_align  = TextNode.ACenter,
 						)
+		self.hide()
 
-	def refresh_start(self):
+	def refreshStart(self):
 		self.refreshButton["state"] = DGG.DISABLED
-		if self.showbase.auth_con.getConnected():
+		if self.showbase.authCon.getConnected():
 			self.servers = []
-			self.showbase.auth_con.sendData('server_query')
-			taskMgr.doMethodLater(0.25, self.query_servers, 'Server Query')
+			self.showbase.authCon.sendData('serverQuery')
+			taskMgr.doMethodLater(0.25, self.queryServers, 'Server Query')
 
-	def query_servers(self, task):
+	def queryServers(self, task):
 		finished = False
-		temp = self.showbase.auth_con.getData()
+		temp = self.showbase.authCon.getData()
 		for package in temp:
 			if len(package) == 2:
 				# Handle Server Query
@@ -153,12 +155,12 @@ class MainMenu():
 					self.refreshButton["state"] = DGG.NORMAL
 					finished = True
 				else:
-					self.showbase.auth_con.passData(package)
+					self.showbase.authCon.passData(package)
 		if finished:
 			return task.done
 		return task.cont
 
-	def join_chat(self):
+	def joinChat(self):
 		pass
 		# Let the client mini auth with the lobby server(lobby_loop) by "Logging into the chat"
 		# Since everything will be in the main menu? like a main chat window.. something similar to HoN i guess?
@@ -166,18 +168,18 @@ class MainMenu():
 		# Then the player picks one and it connects via the host name/ip or whatever.
 		# While this is busy happening the client stays connected to the lobby server.
 		
-	def join_server(self):
+	def joinServer(self):
 		self.status.setText('Attempting to join server @ ' + self.ip + '...')
 		# attempt to connect to the game server
 		self.showbase.client = Client(self.ip, 9099, compress = True)
 		if self.showbase.client.getConnected():
 			print 'Connected to server, Awaiting authentication...'
 			self.showbase.client.sendData(('username', self.showbase.username))
-			taskMgr.add(self.authorization_listener, 'Authorization Listener')
+			taskMgr.add(self.authorizationListener, 'Authorization Listener')
 		else:
 			self.status.setText('Could not Connect...')
 
-	def authorization_listener(self, task):
+	def authorizationListener(self, task):
 		temp = self.showbase.client.getData()
 		auth = False
 		if temp != []:
@@ -192,7 +194,7 @@ class MainMenu():
 					else:
 						self.showbase.client.passData(package)
 		if auth:
-			self.showbase.start_pregame()
+			self.showbase.startPregame()
 			return task.done
 		return task.again
 
@@ -201,15 +203,26 @@ class MainMenu():
 
 	def hide(self):
 		taskMgr.remove('Server Query Timeout')
-		self.background.destroy()
+		self.background.hide()
 		for b in self.buttons:
-			b.destroy()
-		self.status.destroy()
+			b.hide()
+		self.status.hide()
 		if self.showbase.online:
-			self.chat.destroy()
-			self.channels.destroy()
+			self.chat.hide()
+			self.channels.hide()
 		else:
-			self.entry.destroy()
+			self.entry.hide()
+
+	def show(self):
+		self.background.show()
+		for b in self.buttons:
+			b.show()
+		self.status.show()
+		if self.showbase.online:
+			self.chat.show()
+			self.channels.show()
+		else:
+			self.entry.show()
 
 	def setIp(self, ip):
 		self.ip = ip

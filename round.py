@@ -1,17 +1,8 @@
-#from math import pi, sin, cos, atan2
-#from direct.showbase.ShowBase import ShowBase
-#from direct.task import Task
-#import sys, random
-#from pandac.PandaModules import *
-#from direct.gui.DirectGui import *
-#from panda3d.core import TextNode
-#from direct.showbase.DirectObject import DirectObject
-from collections import deque
-
-from util							import *
 from game							import Game, GameHandler
 
-game_tick = 1.0 / 30.0
+from collections import deque
+
+gameTick = 1.0 / 30.0
 
 class Round():
 	# Initialisation Function
@@ -20,7 +11,7 @@ class Round():
 		self.showbase = showbase
 		
 		# total time since start of game, to keep ticks updating on time (rather, not before)
-		self.total_time = 0
+		self.totalTime = 0
 		
 		# packets queue
 		self.incoming = deque()
@@ -34,7 +25,7 @@ class Round():
 		self.gameHandler = GameHandler(self.showbase.client, self.game)
 		
 		self.tick = 0
-		self.temp_tick = 0
+		self.tempTick = 0
 		
 		# Set event handlers for keys		
 		#self.showbase.accept("escape", sys.exit)
@@ -43,16 +34,18 @@ class Round():
 		self.showbase.client.sendData(('round', 'sync'))
 		
 		# Add the game loop procedure to the task manager.
-		self.showbase.taskMgr.add(self.game_loop, 'Game Loop')
+		self.showbase.taskMgr.add(self.gameLoop, 'Game Loop')
 	
-	def hide(self):
+	def destroy(self):
 		self.showbase.taskMgr.remove('Game Loop')
+		self.game.destroy()
+		self.gameHandler.destroy()
 		
 	# Game Loop Procedure
-	def game_loop(self, task):
-		dt = globalClock.getDt()
+	def gameLoop(self, task):
+		dt = task.getDt()
 		# update total time
-		self.total_time += dt
+		self.totalTime += dt
 		# process any incoming network packets
 		temp = self.showbase.client.getData()
 		for packet in temp:
@@ -67,15 +60,15 @@ class Round():
 				if package[0] == 'tick':
 					# not sure if this is the best way to do this but yea something to look into for syncing them all preround i guess
 					if package[1] == 0:
-						self.total_time = 0
+						self.totalTime = 0
 					# check what tick it should be
-					self.temp_tick = package[1]
+					self.tempTick = package[1]
 					# if this tick needs to be run (if frames are up to the server tick)
 					#if self.temp_tick * game_tick <= self.total_time:
 						# run tick
-					if not self.game.run_tick(game_tick):
+					if not self.game.runTick(gameTick):
 						print 'Game Over'
-						self.showbase.end_round()
+						self.showbase.endRound()
 						return task.done
 					#else:
 						# otherwise put packet back on front of list and end frame processing

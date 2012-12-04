@@ -2,11 +2,8 @@ from world							import World
 from centipede						import Centipede
 from food							import Food
 from camerahandler					import CameraHandler
-from util							import *
-from pandac.PandaModules import *
-from panda3d.bullet import *
-from direct.gui.OnscreenText import OnscreenText
 from direct.showbase import DirectObject 
+from pandac.PandaModules import *
 import random
 
 class GameData():
@@ -36,14 +33,14 @@ class GameHandler(DirectObject.DirectObject):
 		self.keys = { "left": 0, "right": 0, "up": 0, "down": 0, "c": 0 }
 		
 		# holding c will focus the camera on clients warlock
-		self.accept("c", set_value, [self.keys, "c", 1])
-		self.accept("c-up", set_value, [self.keys, "c", 0])
+		self.accept("c", self.setValue, [self.keys, "c", 1])
+		self.accept("c-up", self.setValue, [self.keys, "c", 0])
 		
 		# mouse 1 is for casting the spell set by the keys
-		#showbase.accept("mouse1", self.cast_spell)
+		#showbase.accept("mouse1", self.castSpell)
 		
 		# mouse 3 is for movement, or canceling keys for casting spell
-		self.accept("mouse3", self.update_destination)
+		self.accept("mouse3", self.updateDestination)
 		
 		self.ch = CameraHandler()
 		
@@ -51,14 +48,17 @@ class GameHandler(DirectObject.DirectObject):
 		follow = self.game.centipede.head
 		self.ch.setTarget(follow.getPos().getX(), follow.getPos().getY(), follow.getPos().getZ())
 		self.ch.turnCameraAroundPoint(follow.getH(), 0)
+
+	def setValue(self, array, key, value):
+		array[key] = value
 	
 	# sends destination request to server, or cancels spell if selected
-	def update_destination(self):
-		destination = self.ch.get_mouse_3d()
+	def updateDestination(self):
+		destination = self.ch.getMouse3D()
 		if not destination.getZ() == -1:
-			self.client.sendData(('update_dest', (destination.getX(), destination.getY())))
+			self.client.sendData(('updateDest', (destination.getX(), destination.getY())))
 
-	def update_camera(self, dt):
+	def updateCamera(self, dt):
 		# sets the camMoveTask to be run every frame
 		self.ch.camMoveTask(dt)
 		
@@ -69,10 +69,11 @@ class GameHandler(DirectObject.DirectObject):
 			self.ch.turnCameraAroundPoint(0, 0)
 
 	def update(self, dt):
-		self.update_camera(dt)
+		self.updateCamera(dt)
 	
 	def destroy(self):
 		self.ignoreAll()
+		self.ch.destroy()
 
 class Game(DirectObject.DirectObject):
 	def __init__(self, showbase, usersData, gameData):
@@ -95,15 +96,22 @@ class Game(DirectObject.DirectObject):
 			user.centipede = Centipede(showbase, len(self.usersData), self.addToCollisions)
 			if user.thisPlayer:
 				self.centipede = user.centipede
-				self.centipede.attach_ring(showbase)
+				self.centipede.attachRing(showbase)
 		
 		self.foods = []
 		for i in range(self.gameData.maxFoods):
-			self.foods.append(Food(i, self.addToCollisions))
+			self.foods.append(Food(self.showbase, i, self.addToCollisions))
 		
 		self.ticks = 0
+
+	def destroy(self):
+		self.world.destroy()
+		for user in self.usersData:
+			user.centipede.destroy()
+		for food in self.foods:
+			food.destroy()
 		
-	def run_tick(self, dt):
+	def runTick(self, dt):
 		# run each of the centipedes simulations
 		for user in self.usersData:
 			user.centipede.update(dt)

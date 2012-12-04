@@ -1,10 +1,9 @@
 from direct.actor.Actor import Actor
-from pandac.PandaModules import CollisionSphere, CollisionNode
-from collision import *
+from collision import initCollisionSphere
 import random
 
 class Food():
-	def __init__(self, num, addToCollisions):
+	def __init__(self, showbase, num, addToCollisions):
 		self.addToCollisions = addToCollisions
 		self.num = num
 		
@@ -16,7 +15,7 @@ class Food():
 		# Set animation loop to Walk
 		self.model.loop('Walk')
 		# Reparent the model to render.
-		self.model.reparentTo(base.render)
+		self.model.reparentTo(showbase.render)
 		
 		self.model.collisionNode = initCollisionSphere(self.model, 'Food-' + str(num), 0.6)
 		
@@ -24,6 +23,9 @@ class Food():
 		self.addToCollisions(self.model.collisionNode)
 		
 		self.reset()
+
+	def destroy(self):
+		self.model.detachNode()
 		
 	def update(self, dt):
 		self.model.setPos(self.model, 0, 0.1 * dt, 0)

@@ -1,39 +1,37 @@
-from direct.gui.DirectGui     import *
 from direct.gui.OnscreenImage import OnscreenImage
 from direct.gui.OnscreenText  import OnscreenText
+from direct.gui.DirectGui     import *
 from pandac.PandaModules      import *
 
-import ConfigParser, os
 from client						import Client
+
+import ConfigParser
 
 class Login():
 	def __init__(self, showbase):
 		self.showbase = showbase
 		
-		self.background = OnscreenImage(
-			image  = 'media/gui/login/bg.png',
-			parent = render2d
+		self.background = DirectFrame(
+			frameSize = (-1, 1, -1, 1),
+			frameTexture  = 'media/gui/login/bg.png',
+			parent = render2d,
 		)
-		
-		base.setBackgroundColor(0, 0, 0)
-		# sets the background color to black because the
-		# default grey color bugs me for some reason
 
 		### CONFIG LOADER ###
 		config = ConfigParser.RawConfigParser()
 		config.read('master.cfg')
-		self.LOGIN_IP = config.get('MASTER SERVER CONNECTION', 'master_ip')
-		self.LOGIN_PORT = config.getint('MASTER SERVER CONNECTION', 'master_port')
+		self.LOGIN_IP = config.get('MASTER SERVER CONNECTION', 'masterIp')
+		self.LOGIN_PORT = config.getint('MASTER SERVER CONNECTION', 'masterPort')
 
 		config = ConfigParser.RawConfigParser()
 		config.read('client.cfg')
-		self.store_username = config.getint('USERDATA', 'store_username')
-		if self.store_username == 1:
+		self.storeUsername = config.getint('USERDATA', 'storeUsername')
+		if self.storeUsername == 1:
 			self.username = config.get('USERDATA', 'username')
 		else:
 			self.username = ''
-		self.store_password = config.getint('USERDATA', 'store_password')
-		if self.store_password == 1:
+		self.storePassword = config.getint('USERDATA', 'storePassword')
+		if self.storePassword == 1:
 			self.password = config.get('USERDATA', 'password')
 		else:
 			self.password = ''
@@ -45,26 +43,27 @@ class Login():
 		self.usernameBox['focus'] = 1
 		# sets the cursor to the username field by default
 
-		showbase.accept('tab', self.cycleLoginBox)
-		showbase.accept('shift-tab', self.cycleLoginBox)
+		self.showbase.accept('tab', self.cycleLoginBox)
+		self.showbase.accept('shift-tab', self.cycleLoginBox)
 		# enables the user to cycle through the text fields with the tab key
 		# this is a standard feature on most login forms
 
-		showbase.accept('enter', self.attemptLogin)         
+		self.showbase.accept('enter', self.attemptLogin)         
 		# submits the login form, or you can just click the Login button
 		
 		# checking variable to stop multiple presses of the button spawn multiple tasks
-		self.request_attempt = False
+		self.requestAttempt = False
 		
-		self.showbase.auth_con = Client(self.LOGIN_IP, self.LOGIN_PORT, compress = True)
-		if not self.showbase.auth_con.getConnected():
+		self.showbase.authCon = Client(self.LOGIN_IP, self.LOGIN_PORT, compress = True)
+		if not self.showbase.authCon.getConnected():
 			self.updateStatus("Could not connect to the Login server\nOFFLINE MODE")
+			self.showbase.online = False
 
-	def update_config(self):
+	def updateConfig(self):
 		config = ConfigParser.RawConfigParser()
 		config.read('client.cfg')
-		config.set('USERDATA', 'store_username', self.usernameStoreBox["indicatorValue"])
-		config.set('USERDATA', 'store_password', self.passwordStoreBox["indicatorValue"])
+		config.set('USERDATA', 'storeUsername', self.usernameStoreBox["indicatorValue"])
+		config.set('USERDATA', 'storePassword', self.passwordStoreBox["indicatorValue"])
 		if self.usernameStoreBox["indicatorValue"] == 1:
 			config.set('USERDATA', 'username', self.usernameBox.get())
 		if self.passwordStoreBox["indicatorValue"] == 1:
@@ -92,7 +91,7 @@ class Login():
 		# Username textbox where you type in your username
 		
 		p = boxloc + Vec3(0.4, 0.0, 0.09)
-		self.usernameStoreBox = DirectCheckButton(text = "Save Username?", pos = p, scale = .04, indicatorValue = self.store_username)
+		self.usernameStoreBox = DirectCheckButton(text = "Save Username?", pos = p, scale = .04, indicatorValue = self.storeUsername)
 		# Toggle to save/not save your username
 		
 		p = boxloc + Vec3(-0.22, 0.0, 0.0)       
@@ -106,7 +105,7 @@ class Login():
 		# with a * like a standard password box
 		
 		p = boxloc + Vec3(0.4, 0.0, 0.0)
-		self.passwordStoreBox = DirectCheckButton(text = "Save Password?", pos = p, scale = .04, indicatorValue = self.store_password)
+		self.passwordStoreBox = DirectCheckButton(text = "Save Password?", pos = p, scale = .04, indicatorValue = self.storePassword)
 		# Toggle to save/not save your username
 		
 		p = boxloc + Vec3(0, 0, -0.090)
@@ -164,37 +163,37 @@ class Login():
 			self.request(self.usernameBox.get(), self.passwordBox.get(), 'create')
 	
 	def request(self, username, password, request):
-		if not self.request_attempt:
+		if not self.requestAttempt:
 			# attempt to connect again if it failed on startup
-			if self.showbase.auth_con.getConnected():
-				self.request_attempt = True
+			if self.showbase.authCon.getConnected():
+				self.requestAttempt = True
 				self.loginButton["state"] = DGG.DISABLED
 				self.createAccButton["state"] = DGG.DISABLED
-				self.showbase.auth_con.sendData((request, (username, password)))
+				self.showbase.authCon.sendData((request, (username, password)))
 				self.showbase.username = username
 				self.showbase.online = True
-				taskMgr.doMethodLater(0.2, self.response_reader, 'Update Login')
+				taskMgr.doMethodLater(0.2, self.responseReader, 'Update Login')
 			else:
 				# client not connected to login/auth server so display message
 				self.updateStatus("Offline Mode")
 				self.showbase.username = username
 				self.showbase.online = False
 				self.update_config()
-				self.showbase.start_mainmenu(self)
+				self.showbase.startMainmenu()
 	
-	def response_reader(self, task):
+	def responseReader(self, task):
 		if task.time > 2.5:
 			self.loginButton["state"] = DGG.NORMAL
 			self.createAccButton["state"] = DGG.NORMAL
 			self.updateStatus("Timeout from Login server")
 			return task.done
 		else:
-			temp = self.showbase.auth_con.getData()
+			temp = self.showbase.authCon.getData()
 			for package in temp:
 				if len(package) == 2:
 					print "Received: " + str(package)
 					print "Connected to login server"
-					if package[0] == 'login_failed':
+					if package[0] == 'loginFailed':
 						print "Login failed: ", package[1]
 						if package[1] == 'username':
 							self.updateStatus("Username Doesnt Exist")
@@ -209,17 +208,17 @@ class Login():
 							self.passwordBox['focus'] = 1
 						elif package[1] == 'logged':
 							self.updateStatus("Username already logged in")
-						self.request_attempt = False
+						self.requestAttempt = False
 						self.loginButton["state"] = DGG.NORMAL
 						self.createAccButton["state"] = DGG.NORMAL
 						return task.done
-					elif package[0] == 'login_valid':
+					elif package[0] == 'loginValid':
 						print "Login valid: ", package[1]
 						self.updateStatus(package[1])
-						self.update_config()
-						self.showbase.start_mainmenu(self)
+						self.updateConfig()
+						self.showbase.startMainmenu()
 						return task.done
-					elif package[0] == 'create_failed':
+					elif package[0] == 'createFailed':
 						print "Create failed: ", package[1]
 						if package[1] == 'exists':
 							self.updateStatus("Username Already Exists")
@@ -227,14 +226,14 @@ class Login():
 							self.usernameBox.set("")
 							self.passwordBox['focus'] = 0
 							self.usernameBox['focus'] = 1
-						self.request_attempt = False
+						self.requestAttempt = False
 						self.loginButton["state"] = DGG.NORMAL
 						self.createAccButton["state"] = DGG.NORMAL
 						return task.done
-					elif package[0] == 'create_success':
+					elif package[0] == 'createSuccess':
 						print "Create success", package[1]
 						self.updateStatus("Account Created Successfully")
-						self.request_attempt = False
+						self.requestAttempt = False
 						self.attemptLogin()
 						return task.done
 			return task.cont

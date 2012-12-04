@@ -54,6 +54,11 @@ class Centipede():
 		
 		self.reset()
 
+	def destroy(self):
+		self.reset()
+		self.head.detachNode()
+		self.tail.detachNode()
+
 	def reset(self):
 		for node in self.body:
 			node.detachNode()
@@ -139,14 +144,14 @@ class Centipede():
 		self.tail.setPos(node, 0, -0.5, 0)
 	
 	# for client to attach ring below clients head
-	def attach_ring(self, showbase):
-		self.ring_node = showbase.loader.loadModel('media/warlock/warlock_ring')
-		self.ring_node.setPos(-Vec3(0, 0, 1.25))
-		self.ring_node.reparentTo(self.head)
+	def attachRing(self, showbase):
+		self.ringNode = showbase.loader.loadModel('media/warlock/warlock_ring')
+		self.ringNode.setPos(-Vec3(0, 0, 1.25))
+		self.ringNode.reparentTo(self.head)
 	
-	def set_destination(self, destination):
+	def setDestination(self, destination):
 		self.destination = Vec3(destination[0], destination[1], 0)
 		self.destinationNode.setPos(self.destination)
 	
-	def get_destination_update(self):
+	def getDestinationUpdate(self):
 		return self.destination.getX(), self.destination.getY()

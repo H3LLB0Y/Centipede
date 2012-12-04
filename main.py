@@ -20,13 +20,11 @@ from login import Login
 from mainmenu import MainMenu
 # For Pregame state
 from pregame import Pregame
-# For Preround state
-from preround import Preround
 # For Round state
 from round import Round
 
 # For starting the server from within the game
-from subprocess import *
+from subprocess import Popen
 # For exit function
 import sys
 
@@ -35,28 +33,33 @@ class Main(ShowBase):
 		ShowBase.__init__(self)
 		self.login = Login(self)
 	
-	def start_mainmenu(self, prev):
-		prev.hide()
+	def startMainmenu(self):
+		self.login.hide()
 		self.mainmenu = MainMenu(self)
-	
-	def start_pregame(self):
-		self.mainmenu.hide()
 		self.pregame = Pregame(self)
+		self.mainmenu.show()
 	
-	def start_preround(self):
+	def startPregame(self):
+		self.mainmenu.hide()
+		self.pregame.reset()
+		self.pregame.show()
+
+	def returnToMenu(self):
 		self.pregame.hide()
-		self.preround = Preround(self)
+		self.mainmenu.show()
 	
-	def start_round(self):
-		self.preround.hide()
+	def startRound(self):
+		self.pregame.hide()
 		self.round = Round(self)
 	
-	def end_round(self):
-		self.round.hide()
+	def endRound(self):
+		self.round.destroy()
+		del self.round
 		self.pregame.show()
 		
-	def host_game(self, params):
+	def hostGame(self, params):
 		pid = Popen(["python", "server.py", params]).pid
+		print 'Server Process ID:', pid
 	
 	def quit(self):
 		sys.exit()

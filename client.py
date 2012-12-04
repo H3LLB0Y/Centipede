@@ -1,5 +1,6 @@
-from pandac.PandaModules import QueuedConnectionManager, QueuedConnectionListener
-from pandac.PandaModules import QueuedConnectionReader, ConnectionWriter
+from pandac.PandaModules import QueuedConnectionManager
+from pandac.PandaModules import QueuedConnectionReader
+from pandac.PandaModules import ConnectionWriter
 from direct.distributed.PyDatagram import PyDatagram
 from direct.distributed.PyDatagramIterator import PyDatagramIterator
 from pandac.PandaModules import NetDatagram

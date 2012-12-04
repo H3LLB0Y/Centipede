@@ -24,20 +24,11 @@ from user 							import User
 
 import rencode
 
-game_tick = 1.0 / 30.0
+gameTick = 1.0 / 30.0
 
 class Server(ShowBase):
 	def __init__(self):
 		ShowBase.__init__(self)
-
-		# Disable Mouse Control for camera
-		self.disableMouse()
-		
-		if camera:
-			camera.setPos(0, 0, 500)
-			camera.lookAt(0, 0, 0)
-
-		self.gameData = GameData(True)
 
 		# Server Networking handling stuff
 		self.compress = False
@@ -56,9 +47,9 @@ class Server(ShowBase):
 		self.connect(9099, 1000)
 		self.startPolling()
 
-		self.attempt_authentication()
+		self.attemptAuthentication()
 		
-		taskMgr.doMethodLater(0.5, self.lobby_loop, 'Lobby Loop')
+		taskMgr.doMethodLater(0.5, self.lobbyLoop, 'Lobby Loop')
 
 	def connect(self, port, backlog = 1000):
 		# Bind to our socket
@@ -159,27 +150,27 @@ class Server(ShowBase):
 				self.tempConnections.remove(connection)
 				if not self.online:
 					user = User(package[1], connection)
-					self.update_client(user)
+					self.updateClient(user)
 					self.users.append(user)
 				else:
 					self.client.sendData(('auth', package[1]))
 					self.unauthenticatedUsers.append(User(package[1], connection))
 
-	def attempt_authentication(self):
+	def attemptAuthentication(self):
 		config = ConfigParser.RawConfigParser()
 		config.read('server.cfg')
-		self.SERVER_NAME = config.get('SERVER DETAILS', 'server_name')
+		self.SERVER_NAME = config.get('SERVER DETAILS', 'serverName')
 
 		config = ConfigParser.RawConfigParser()
 		config.read('master.cfg')
-		self.LOGIN_IP = config.get('MASTER SERVER CONNECTION', 'master_ip')
-		self.LOGIN_PORT = config.getint('MASTER SERVER CONNECTION', 'master_port')
+		self.LOGIN_IP = config.get('MASTER SERVER CONNECTION', 'masterIp')
+		self.LOGIN_PORT = config.getint('MASTER SERVER CONNECTION', 'masterPort')
 
 		# Client for connecting to main server for showing exists and receiving clients
 		self.client = Client(self.LOGIN_IP, self.LOGIN_PORT, compress = True)
 		if self.client.getConnected():
 			self.client.sendData(('server', self.SERVER_NAME))
-			taskMgr.add(self.client_validator, 'Client Validator')
+			taskMgr.add(self.clientValidator, 'Client Validator')
 			self.client.sendData(('state', 'lobby'))
 			self.online = True
 		else:
@@ -190,7 +181,7 @@ class Server(ShowBase):
 			self.client = None
 			self.online = False
 
-	def client_validator(self, task):
+	def clientValidator(self, task):
 		temp = self.client.getData()
 		for package in temp:
 			if len(package) == 2:
@@ -199,7 +190,7 @@ class Server(ShowBase):
 					for user in self.unauthenticatedUsers:
 						if user.name == package[1]:
 							# send all required data to user
-							self.update_client(user)
+							self.updateClient(user)
 							# all authenticated users
 							self.users.append(user)
 							self.unauthenticatedUsers.remove(user)
@@ -214,18 +205,17 @@ class Server(ShowBase):
 							break
 		return task.again
 
-	def update_client(self, user):
+	def updateClient(self, user):
 		# confirm authorization
 		self.sendData(('auth', user.name), user.connection)
-		# game data
-		self.sendData(('gamedata', self.gameData.packageData()), user.connection)
 		for existing in self.users:
 			self.sendData(('client', existing.name), user.connection)
 			self.sendData(('ready', (existing.name, existing.ready)), user.connection)
-			self.sendData(('client', user.name), existing.connection)
+			if existing.connection:
+				self.sendData(('client', user.name), existing.connection)
 		self.sendData(('client', user.name), user.connection)
 
-	def lobby_loop(self, task):
+	def lobbyLoop(self, task):
 		temp = self.getData()
 		for package in temp:
 			if len(package) == 2:
@@ -254,36 +244,45 @@ class Server(ShowBase):
 							# break out of for loop
 							break
 		# if all players are ready and there is X of them
-		game_ready = True
+		gameReady = True
 		# if there is any clients connected
 		if self.getUsers() == []:
-			game_ready = False
+			gameReady = False
 		for user in self.users:
 			if not user.ready:
-				game_ready = False
-		if game_ready:
-			self.broadcastData(('state', 'preround'))
-			if self.online:
-				self.client.sendData(('state', 'preround'))
-			taskMgr.doMethodLater(0.5, self.preround_loop, 'Preround Loop')
-			print "Preround State"
+				gameReady = False
+		if gameReady:
+			self.prepareGame()
 			return task.done
 		return task.again
 		
-	def preround_loop(self, task):
-		self.game_time = 0
+	def prepareGame(self):
+		if camera:
+			# Disable Mouse Control for camera
+			self.disableMouse()
+			
+			camera.setPos(0, 0, 500)
+			camera.lookAt(0, 0, 0)
+
+		self.gameData = GameData(True)
+		
+		# game data
+		self.broadcastData(('gamedata', self.gameData.packageData()))
+		self.broadcastData(('state', 'preround'))
+		if self.online:
+			self.client.sendData(('state', 'preround'))
+		print "Preparing Game"
+		self.gameTime = 0
 		self.tick = 0
 
 		usersData = []
 		for user in self.users:
 			usersData.append(user.gameData)
 		self.game = Game(self, usersData, self.gameData)
-		taskMgr.doMethodLater(0.5, self.round_ready_loop, 'Game Loop')
+		taskMgr.doMethodLater(0.5, self.roundReadyLoop, 'Game Loop')
 		print "Round ready State"
-		return task.done
-		#return task.again
 		
-	def round_ready_loop(self, task):
+	def roundReadyLoop(self, task):
 		temp = self.getData()
 		for package in temp:
 			if len(package) == 2:
@@ -295,18 +294,18 @@ class Server(ShowBase):
 								if package[0][1] == 'sync':
 									user.sync = True
 		# if all players are ready and there is X of them
-		round_ready = True
+		roundReady = True
 		# if there is any clients connected
 		for user in self.users:
 			if user.sync == False:
-				round_ready = False
-		if round_ready:
-			taskMgr.doMethodLater(2.5, self.game_loop, 'Game Loop')
+				roundReady = False
+		if roundReady:
+			taskMgr.doMethodLater(2.5, self.gameLoop, 'Game Loop')
 			print "Game State"
 			return task.done
 		return task.again
 	
-	def game_loop(self, task):
+	def gameLoop(self, task):
 		# process incoming packages
 		temp = self.getData()
 		for package in temp:
@@ -317,26 +316,26 @@ class Server(ShowBase):
 						user.gameData.processUpdatePacket(package[0])
 		# get frame delta time
 		dt = globalClock.getDt()
-		self.game_time += dt
+		self.gameTime += dt
 		# if time is less than 3 secs (countdown for determining pings of clients?)
 		# tick out for clients
-		while self.game_time > game_tick:
+		while self.gameTime > gameTick:
 			# update all clients with new info before saying tick
 			for user in self.users:
 				updates = user.gameData.makeUpdatePackets()
 				for packet in updates:
 					self.broadcastData((user.name, packet))
 			self.broadcastData(('tick', self.tick))
-			self.game_time -= game_tick
+			self.gameTime -= gameTick
 			self.tick += 1
 			# run simulation
-			if not self.game.run_tick(game_tick):
+			if not self.game.runTick(gameTick):
 				print 'Game Over'
 				# send to all players that game is over (they know already but whatever)
 				# and send final game data/scores/etc
 				for user in self.users:
 					user.ready = False
-				taskMgr.doMethodLater(0.5, self.lobby_loop, 'Lobby Loop')
+				taskMgr.doMethodLater(0.5, self.lobbyLoop, 'Lobby Loop')
 				return task.done
 		return task.cont
 

@@ -10,11 +10,11 @@ loadPrcFileData("",
 
 from pandac.PandaModules import QueuedConnectionManager, QueuedConnectionListener
 from pandac.PandaModules import QueuedConnectionReader, ConnectionWriter
+from pandac.PandaModules import NetDatagram
+from pandac.PandaModules import PointerToConnection, NetAddress
 from direct.distributed.PyDatagram import PyDatagram
 from direct.distributed.PyDatagramIterator import PyDatagramIterator
-from pandac.PandaModules import NetDatagram
 from direct.task.Task import Task
-from pandac.PandaModules import *
 from direct.showbase.ShowBase import ShowBase
 
 import ConfigParser
@@ -49,7 +49,7 @@ class Server(ShowBase):
 
 		self.attemptAuthentication()
 		
-		taskMgr.doMethodLater(0.5, self.lobbyLoop, 'Lobby Loop')
+		self.taskMgr.doMethodLater(0.5, self.lobbyLoop, 'Lobby Loop')
 
 	def connect(self, port, backlog = 1000):
 		# Bind to our socket
@@ -57,8 +57,8 @@ class Server(ShowBase):
 		self.cListener.addConnection(tcpSocket)
 
 	def startPolling(self):
-		taskMgr.add(self.tskListenerPolling, "serverListenTask", -40)
-		taskMgr.add(self.tskDisconnectPolling, "serverDisconnectTask", -39)
+		self.taskMgr.add(self.tskListenerPolling, "serverListenTask", -40)
+		self.taskMgr.add(self.tskDisconnectPolling, "serverDisconnectTask", -39)
 
 	def tskListenerPolling(self, task):
 		if self.cListener.newConnectionAvailable():
@@ -69,8 +69,8 @@ class Server(ShowBase):
 			if self.cListener.getNewConnection(rendezvous, netAddress, newConnection):
 				newConnection = newConnection.p()
 				newConnection.setNoDelay(True)
-				self.tempConnections.append(newConnection) # Remember connection
-				self.cReader.addConnection(newConnection)     # Begin reading connection
+				self.tempConnections.append(newConnection)	# Remember connection
+				self.cReader.addConnection(newConnection)	# Begin reading connection
 		return Task.cont
 
 	def tskDisconnectPolling(self, task):
@@ -150,6 +150,8 @@ class Server(ShowBase):
 				self.tempConnections.remove(connection)
 				if not self.online:
 					user = User(package[1], connection)
+					# confirm authorization
+					self.sendData(('auth', user.name), user.connection)
 					self.updateClient(user)
 					self.users.append(user)
 				else:
@@ -167,10 +169,10 @@ class Server(ShowBase):
 		self.LOGIN_PORT = config.getint('MASTER SERVER CONNECTION', 'masterPort')
 
 		# Client for connecting to main server for showing exists and receiving clients
-		self.client = Client(self.LOGIN_IP, self.LOGIN_PORT, compress = True)
+		self.client = Client(self, self.LOGIN_IP, self.LOGIN_PORT, compress = True)
 		if self.client.getConnected():
 			self.client.sendData(('server', self.SERVER_NAME))
-			taskMgr.add(self.clientValidator, 'Client Validator')
+			self.taskMgr.add(self.clientValidator, 'Client Validator')
 			self.client.sendData(('state', 'lobby'))
 			self.online = True
 		else:
@@ -189,6 +191,8 @@ class Server(ShowBase):
 					print 'User authenticated: ', package[1]
 					for user in self.unauthenticatedUsers:
 						if user.name == package[1]:
+							# confirm authorization
+							self.sendData(('auth', user.name), user.connection)
 							# send all required data to user
 							self.updateClient(user)
 							# all authenticated users
@@ -206,13 +210,12 @@ class Server(ShowBase):
 		return task.again
 
 	def updateClient(self, user):
-		# confirm authorization
-		self.sendData(('auth', user.name), user.connection)
 		for existing in self.users:
-			self.sendData(('client', existing.name), user.connection)
-			self.sendData(('ready', (existing.name, existing.ready)), user.connection)
-			if existing.connection:
-				self.sendData(('client', user.name), existing.connection)
+			if existing.name != user.name:
+				self.sendData(('client', existing.name), user.connection)
+				self.sendData(('ready', (existing.name, existing.ready)), user.connection)
+				if existing.connection:
+					self.sendData(('client', user.name), existing.connection)
 		self.sendData(('client', user.name), user.connection)
 
 	def lobbyLoop(self, task):
@@ -257,12 +260,12 @@ class Server(ShowBase):
 		return task.again
 		
 	def prepareGame(self):
-		if camera:
+		if self.camera:
 			# Disable Mouse Control for camera
 			self.disableMouse()
 			
-			camera.setPos(0, 0, 500)
-			camera.lookAt(0, 0, 0)
+			self.camera.setPos(0, 0, 500)
+			self.camera.lookAt(0, 0, 0)
 
 		self.gameData = GameData(True)
 		
@@ -279,7 +282,7 @@ class Server(ShowBase):
 		for user in self.users:
 			usersData.append(user.gameData)
 		self.game = Game(self, usersData, self.gameData)
-		taskMgr.doMethodLater(0.5, self.roundReadyLoop, 'Game Loop')
+		self.taskMgr.doMethodLater(0.5, self.roundReadyLoop, 'Game Loop')
 		print "Round ready State"
 		
 	def roundReadyLoop(self, task):
@@ -300,7 +303,7 @@ class Server(ShowBase):
 			if user.sync == False:
 				roundReady = False
 		if roundReady:
-			taskMgr.doMethodLater(2.5, self.gameLoop, 'Game Loop')
+			self.taskMgr.doMethodLater(2.5, self.gameLoop, 'Game Loop')
 			print "Game State"
 			return task.done
 		return task.again
@@ -315,7 +318,7 @@ class Server(ShowBase):
 					if user.connection == package[1]:
 						user.gameData.processUpdatePacket(package[0])
 		# get frame delta time
-		dt = globalClock.getDt()
+		dt = self.taskMgr.globalClock.getDt()
 		self.gameTime += dt
 		# if time is less than 3 secs (countdown for determining pings of clients?)
 		# tick out for clients
@@ -335,9 +338,9 @@ class Server(ShowBase):
 				# and send final game data/scores/etc
 				for user in self.users:
 					user.ready = False
-				taskMgr.doMethodLater(0.5, self.lobbyLoop, 'Lobby Loop')
+				self.taskMgr.doMethodLater(0.5, self.lobbyLoop, 'Lobby Loop')
 				return task.done
 		return task.cont
 
 server = Server()
-run()
+server.run()

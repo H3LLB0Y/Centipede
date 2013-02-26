@@ -1,7 +1,7 @@
-from direct.gui.OnscreenImage import OnscreenImage
-from direct.gui.OnscreenText  import OnscreenText
-from direct.gui.DirectGui     import *
-from pandac.PandaModules      import *
+from direct.gui.OnscreenText	import OnscreenText
+from direct.gui.DirectGui		import DirectFrame, DirectButton, DirectEntry, DirectCheckButton
+from direct.gui.DirectGui		import DGG
+from pandac.PandaModules		import Vec3, TextNode
 
 from client						import Client
 
@@ -14,7 +14,7 @@ class Login():
 		self.background = DirectFrame(
 			frameSize = (-1, 1, -1, 1),
 			frameTexture  = 'media/gui/login/bg.png',
-			parent = render2d,
+			parent = self.showbase.render2d,
 		)
 
 		### CONFIG LOADER ###
@@ -54,7 +54,7 @@ class Login():
 		# checking variable to stop multiple presses of the button spawn multiple tasks
 		self.requestAttempt = False
 		
-		self.showbase.authCon = Client(self.LOGIN_IP, self.LOGIN_PORT, compress = True)
+		self.showbase.authCon = Client(self.showbase, self.LOGIN_IP, self.LOGIN_PORT, compress = True)
 		if not self.showbase.authCon.getConnected():
 			self.updateStatus("Could not connect to the Login server\nOFFLINE MODE")
 			self.showbase.online = False
@@ -172,13 +172,13 @@ class Login():
 				self.showbase.authCon.sendData((request, (username, password)))
 				self.showbase.username = username
 				self.showbase.online = True
-				taskMgr.doMethodLater(0.2, self.responseReader, 'Update Login')
+				self.showbase.taskMgr.doMethodLater(0.2, self.responseReader, 'Update Login')
 			else:
 				# client not connected to login/auth server so display message
 				self.updateStatus("Offline Mode")
 				self.showbase.username = username
 				self.showbase.online = False
-				self.update_config()
+				self.updateConfig()
 				self.showbase.startMainmenu()
 	
 	def responseReader(self, task):

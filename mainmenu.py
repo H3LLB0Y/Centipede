@@ -1,7 +1,7 @@
-from direct.gui.DirectGui     import *
-from direct.gui.OnscreenImage import OnscreenImage
+from direct.gui.DirectGui     import DirectFrame, DirectButton, DirectLabel, DirectEntry, DirectScrolledList
+from direct.gui.DirectGui     import DGG
 from direct.gui.OnscreenText  import OnscreenText
-from pandac.PandaModules      import *
+from pandac.PandaModules      import Vec3, TextNode
 
 from client							import Client
 
@@ -14,7 +14,7 @@ class MainMenu():
 		self.background = DirectFrame(
 			frameSize = (-1, 1, -1, 1),
 			frameTexture  = 'media/gui/mainmenu/menu.png',
-			parent = render2d,
+			parent = self.showbase.render2d,
 		)
 
 		self.title = OnscreenText(
@@ -85,7 +85,7 @@ class MainMenu():
 			b1 = DirectButton(text = ("Button1", "click!", "roll", "disabled"),
 								text_scale = 0.1, borderWidth = (0.01, 0.01),
 								relief = 2)
-			 
+			
 			b2 = DirectButton(text = ("Button2", "click!", "roll", "disabled"),
 								text_scale = 0.1, borderWidth = (0.01, 0.01),
 								relief = 2)
@@ -125,7 +125,6 @@ class MainMenu():
 			# then game client will move to pregame state (connect to the server, and wait for others and ready)
 		else:
 			self.entry = DirectEntry(
-							command = self.setIp,
 							focusInCommand = self.clearText,
 							frameSize   = (-3, 3, -.5, 1),
 							initialText = self.ip,
@@ -140,7 +139,7 @@ class MainMenu():
 		if self.showbase.authCon.getConnected():
 			self.servers = []
 			self.showbase.authCon.sendData('serverQuery')
-			taskMgr.doMethodLater(0.25, self.queryServers, 'Server Query')
+			self.showbase.taskMgr.doMethodLater(0.25, self.queryServers, 'Server Query')
 
 	def queryServers(self, task):
 		finished = False
@@ -169,13 +168,17 @@ class MainMenu():
 		# While this is busy happening the client stays connected to the lobby server.
 		
 	def joinServer(self):
+		if self.showbase.online:
+			self.ip = '127.0.0.1'
+		else:
+			self.ip = self.entry.get()
 		self.status.setText('Attempting to join server @ ' + self.ip + '...')
 		# attempt to connect to the game server
-		self.showbase.client = Client(self.ip, 9099, compress = True)
+		self.showbase.client = Client(self.showbase, self.ip, 9099, compress = True)
 		if self.showbase.client.getConnected():
 			print 'Connected to server, Awaiting authentication...'
 			self.showbase.client.sendData(('username', self.showbase.username))
-			taskMgr.add(self.authorizationListener, 'Authorization Listener')
+			self.showbase.taskMgr.add(self.authorizationListener, 'Authorization Listener')
 		else:
 			self.status.setText('Could not Connect...')
 
@@ -202,7 +205,7 @@ class MainMenu():
 		self.entry.enterText('')
 
 	def hide(self):
-		taskMgr.remove('Server Query Timeout')
+		self.showbase.taskMgr.remove('Server Query Timeout')
 		self.background.hide()
 		for b in self.buttons:
 			b.hide()
@@ -223,6 +226,3 @@ class MainMenu():
 			self.channels.show()
 		else:
 			self.entry.show()
-
-	def setIp(self, ip):
-		self.ip = ip

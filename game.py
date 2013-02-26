@@ -1,9 +1,9 @@
 from world							import World
 from centipede						import Centipede
 from food							import Food
-from camerahandler					import CameraHandler
+from camerahandler				import CameraHandler
 from direct.showbase import DirectObject 
-from pandac.PandaModules import *
+from pandac.PandaModules import CollisionTraverser, CollisionHandlerEvent
 import random
 
 class GameData():
@@ -25,8 +25,8 @@ class GameData():
 				self.randSeed = package[1]
 
 class GameHandler(DirectObject.DirectObject):
-	def __init__(self, client, game):
-		self.client = client
+	def __init__(self, showbase, game):
+		self.client = showbase.client
 		self.game = game
 		
 		# Keys array (down if 1, up if 0)
@@ -42,7 +42,7 @@ class GameHandler(DirectObject.DirectObject):
 		# mouse 3 is for movement, or canceling keys for casting spell
 		self.accept("mouse3", self.updateDestination)
 		
-		self.ch = CameraHandler()
+		self.ch = CameraHandler(showbase)
 		
 		# sets the camera up behind clients warlock looking down on it from angle
 		follow = self.game.centipede.head
@@ -133,7 +133,7 @@ class Game(DirectObject.DirectObject):
 			if collEntry.getFromNodePath() == user.centipede.head.collisionNode[0]:
 				for food in self.foods:
 					if collEntry.getIntoNodePath() == food.model.collisionNode[0]:
-						user.centipede.addLength()
+						user.centipede.addLength(self.showbase)
 						food.reset()
 				if len(user.centipede.body) > 2:
 					if collEntry.getIntoNodePath() == user.centipede.tail.collisionNode[0]:

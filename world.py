@@ -1,6 +1,3 @@
-from pandac.PandaModules import *
-from panda3d.bullet import *
-
 # World Class
 class World():
 	def __init__(self, showbase):

@@ -1,15 +1,17 @@
 from pandac.PandaModules import QueuedConnectionManager
 from pandac.PandaModules import QueuedConnectionReader
 from pandac.PandaModules import ConnectionWriter
+from pandac.PandaModules import NetDatagram
+from pandac.PandaModules import PointerToConnection
+
 from direct.distributed.PyDatagram import PyDatagram
 from direct.distributed.PyDatagramIterator import PyDatagramIterator
-from pandac.PandaModules import NetDatagram
 from direct.task.Task import Task
-from pandac.PandaModules import *
 import rencode
 
 class Client:
-	def __init__(self, host, port, timeout = 3000, compress=False):
+	def __init__(self, showbase, host, port, timeout = 3000, compress=False):
+		self.showbase = showbase
 		self.host = host
 		self.port = port
 		self.timeout = timeout
@@ -25,10 +27,11 @@ class Client:
 		self.passedData = []
 
 		self.connect(self.host, self.port, self.timeout)
+
 		self.startPolling()
 
 	def startPolling(self):
-		taskMgr.add(self.tskDisconnectPolling, "clientDisconnectTask", -39)
+		self.showbase.taskMgr.add(self.tskDisconnectPolling, "clientDisconnectTask", -39)
 
 	def connect(self, host, port, timeout = 3000):
 		# Connect to our host's socket

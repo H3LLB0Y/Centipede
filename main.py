@@ -1,7 +1,7 @@
 from pandac.PandaModules import loadPrcFileData
 loadPrcFileData("",
 """
-	window-title WARLOCK [ARENA]
+	window-title Centipede!
 	fullscreen 0
 	win-size 1024 768
 	cursor-hidden 0
@@ -11,16 +11,11 @@ loadPrcFileData("",
 """
 )
 
-# For Showbase (main class)
 from direct.showbase.ShowBase import ShowBase
 
-# For Login state
 from login import Login
-# For MainMenu state
 from mainmenu import MainMenu
-# For Pregame state
 from pregame import Pregame
-# For Round state
 from round import Round
 
 # For starting the server from within the game

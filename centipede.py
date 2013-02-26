@@ -1,7 +1,6 @@
-from math import pi, sin, cos, atan2, floor, degrees
 from direct.actor.Actor import Actor
-from pandac.PandaModules import Vec3, CollisionSphere, CollisionNode
-from collision import *
+from pandac.PandaModules import Vec3
+from collision import initCollisionSphere
 from direct.showbase.PythonUtil import fitDestAngle2Src
 
 # Centipede Class
@@ -43,7 +42,7 @@ class Centipede():
 		# Set animation loop to Walk
 		self.tail.loop('Walk')
 		# Reparent the model to render.
-		self.tail.reparentTo(base.render)
+		self.tail.reparentTo(showbase.render)
 		
 		self.tail.collisionNode = initCollisionSphere(self.tail, 'Tail', 0.65)
 		
@@ -94,22 +93,19 @@ class Centipede():
 			self.destinationNode.setPos(self.head, 0, 1, 0)
 		else:
 			self.head.setH(self.head.getH() + change)
-		
 	
 	def moveForwards(self, dt, multi):		
 		# Update centipede position
 		self.head.setPos(self.head, 0, dt * multi * 25, 0)
 		
 		for i in range(len(self.body)):
+			# Calculate new heading angle for body part
+			# And update body position
 			if i == 0:
-				# Calculate new heading angle for body part
 				self.body[i].headsUp(self.head)
-				# Update body position
 				self.body[i].setPos(self.body[i], 0, self.body[i].getDistance(self.head) - self.length, 0)
 			else:
-				# Calculate new heading angle for body part
 				self.body[i].headsUp(self.body[i - 1])
-				# Update body position
 				self.body[i].setPos(self.body[i], 0, self.body[i].getDistance(self.body[i - 1]) - self.length, 0)
 		if len(self.body) > 0:
 			# Update Tail Heading
@@ -122,13 +118,13 @@ class Centipede():
 			# Update body position
 			self.tail.setPos(self.tail, 0, self.head.getDistance(self.tail) - self.length, 0)
 
-	def addLength(self):
+	def addLength(self, showbase):
 		# Load centipede model
 		node = Actor('models/centipede')
 		# Set animation loop to Walk
 		node.loop('Walk')
 		# Reparent the model to render.
-		node.reparentTo(base.render)
+		node.reparentTo(showbase.render)
 		# Set body rotation
 		node.setH(self.tail.getH())
 		# Set body position

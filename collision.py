@@ -1,4 +1,4 @@
-from pandac.PandaModules import CollisionSphere, CollisionNode, Vec3
+from pandac.PandaModules import CollisionSphere, CollisionNode
 
 def initCollisionSphere(obj, desc, radiusMultiplier):
 	# Get the size of the object for the collision sphere.

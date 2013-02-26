@@ -1,10 +1,10 @@
 from pandac.PandaModules import QueuedConnectionManager, QueuedConnectionListener
 from pandac.PandaModules import QueuedConnectionReader, ConnectionWriter
+from pandac.PandaModules import PointerToConnection, NetAddress
 from direct.distributed.PyDatagram import PyDatagram
 from direct.distributed.PyDatagramIterator import PyDatagramIterator
 from pandac.PandaModules import NetDatagram
 from direct.task.Task import Task
-from pandac.PandaModules import *
 from direct.showbase.ShowBase import ShowBase
 from db import ClientDataBase
 import rencode
@@ -66,7 +66,7 @@ class LoginServer(ShowBase):
 			self.connect(port, backlog)
 			self.startPolling()
 			
-			taskMgr.doMethodLater(0.5, self.lobbyLoop, 'Lobby Loop')
+			self.taskMgr.doMethodLater(0.5, self.lobbyLoop, 'Lobby Loop')
 			
 			print 'Login Server operating...'
 
@@ -76,8 +76,8 @@ class LoginServer(ShowBase):
 		self.cListener.addConnection(tcpSocket)
 
 	def startPolling(self):
-		taskMgr.add(self.tskListenerPolling, "serverListenTask", -40)
-		taskMgr.add(self.tskDisconnectPolling, "serverDisconnectTask", -39)
+		self.taskMgr.add(self.tskListenerPolling, "serverListenTask", -40)
+		self.taskMgr.add(self.tskDisconnectPolling, "serverDisconnectTask", -39)
 
 	def tskListenerPolling(self, task):
 		if self.cListener.newConnectionAvailable():
@@ -101,6 +101,7 @@ class LoginServer(ShowBase):
 			# Check for if it was a client
 			for client in self.activeClients:
 				if client.connection == connection:
+					print 'removing client'
 					self.activeClients.remove(client)
 					break
 			# then check servers
@@ -113,7 +114,7 @@ class LoginServer(ShowBase):
 				if chat.connection == connection:
 					self.activeChats.remove(chat)
 					break
-					
+		
 		return Task.cont
 
 	def processData(self, netDatagram):

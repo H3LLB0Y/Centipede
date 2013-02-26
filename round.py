@@ -22,7 +22,7 @@ class Round():
 				user.gameData.thisPlayer = True
 			users.append(user.gameData)
 		self.game = Game(self.showbase, users, self.showbase.gameData)
-		self.gameHandler = GameHandler(self.showbase.client, self.game)
+		self.gameHandler = GameHandler(self.showbase, self.game)
 		
 		self.tick = 0
 		self.tempTick = 0
@@ -78,6 +78,7 @@ class Round():
 					for user in self.showbase.users:
 						if user.name == package[0]:
 							user.gameData.processUpdatePacket(package[1])
+		
 		self.gameHandler.update(dt)
 			
 		# Return cont to run task again next frame

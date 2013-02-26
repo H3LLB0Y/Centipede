@@ -1,5 +1,7 @@
-from direct.gui.DirectGui		import *
-from pandac.PandaModules		import *
+from direct.gui.DirectGui		import DirectEntry, DirectFrame, DirectButton
+from direct.gui.DirectGui		import DGG
+from direct.gui.OnscreenText	import OnscreenText
+from pandac.PandaModules		import Vec3, TextNode
 
 from game						import GameData
 from user 						import User
@@ -13,7 +15,7 @@ class Pregame():
 		self.background = DirectFrame(
 			frameSize = (-1, 1, -1, 1),
 			frameTexture  = 'media/gui/mainmenu/menu.png',
-			parent = render2d,
+			parent = self.showbase.render2d,
 		)
 
 		self.title = OnscreenText(
@@ -80,7 +82,8 @@ class Pregame():
 
 	def reset(self):
 		self.messages = []
-	
+		self.showbase.users = []
+
 	def updateLobby(self, task):
 		temp = self.showbase.client.getData()
 		for package in temp:
@@ -140,7 +143,7 @@ class Pregame():
 		for b in self.buttons:
 			b.hide()
 
-		taskMgr.remove('Update Lobby')
+		self.showbase.taskMgr.remove('Update Lobby')
 	
 	def show(self):
 		self.background.show()
@@ -149,4 +152,4 @@ class Pregame():
 			b.show()
 
 		# Add the game loop procedure to the task manager.
-		taskMgr.add(self.updateLobby, 'Update Lobby')
+		self.showbase.taskMgr.add(self.updateLobby, 'Update Lobby')
